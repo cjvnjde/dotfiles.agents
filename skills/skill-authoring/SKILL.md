@@ -81,6 +81,8 @@ Structure the body around actions:
 
 Use imperative language. Match instruction freedom to task fragility: use heuristics for flexible tasks, parameterized patterns for moderately constrained tasks, and exact commands with validation for fragile operations. Make important constraints explicit with `MUST`, `NEVER`, or `ONLY` when ambiguity would cause incorrect behavior.
 
+Prefer the general statement over the concrete instance. A named component, file, symbol, or value inside a rule becomes an anchor: readers pattern-match on that name and apply the rule only to look-alikes, missing every other case it covers. When a rule can be stated without naming a specific thing, state it without. Name one when it is the subject of the rule (a banned API, a required path, a fixed command), when the rule is genuinely ambiguous without it, or when a single example is the cheapest way to make an abstract constraint executable — then keep it to one and make clear it is illustrative.
+
 Do not:
 
 - Repeat the frontmatter description throughout the body.
