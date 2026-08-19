@@ -22,37 +22,45 @@ SCRIPT_PATH="$(resolve_script_path "${BASH_SOURCE[0]}")"
 MODULE_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd -P)"
 ROOT_DIR="$(cd "$MODULE_DIR/.." && pwd -P)"
 SKILLS_DIR="$MODULE_DIR/skills"
-DEST_DIRS=(
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
+STATE_FILE="$STATE_DIR/agents-skills"
+TARGET_AGENTS=(
+  pi
+  codex
+  claude-code
+  zed
+  universal
+)
+LEGACY_DEST_DIRS=(
   "$HOME/.claude/skills"
   "$HOME/.agents/skills"
 )
 
 source "$ROOT_DIR/setup/lib.sh"
 
-prepare_destination() {
-  local dest_dir="$1"
-
-  if [ -d "$dest_dir" ]; then
-    return 0
-  fi
-
-  if [ -e "$dest_dir" ] || [ -L "$dest_dir" ]; then
-    warn "Skills destination is not a directory; leaving unchanged: $dest_dir"
+require_npx() {
+  if ! command -v npx >/dev/null 2>&1; then
+    error "npx is required to install agent skills"
     return 1
   fi
-
-  mkdir -p "$dest_dir"
-  success "Created → $dest_dir"
 }
 
-is_exact_link_to() {
-  local source="$1"
-  local destination="$2"
+collect_skills() {
+  local skill_dir
 
-  [ -L "$destination" ] && [ "$(readlink "$destination")" = "$source" ]
+  for skill_dir in "$SKILLS_DIR"/*; do
+    [ -d "$skill_dir" ] || continue
+
+    if [ ! -f "$skill_dir/SKILL.md" ]; then
+      warn "Skipping directory without SKILL.md: $skill_dir" >&2
+      continue
+    fi
+
+    basename "$skill_dir"
+  done
 }
 
-is_managed_link() {
+is_legacy_managed_link() {
   local path="$1"
   local target
   local relative
@@ -72,83 +80,83 @@ is_managed_link() {
   esac
 }
 
-remove_managed_links() {
-  local dest_dir="$1"
-  local mode="$2"
+remove_legacy_links() {
+  local dest_dir
   local path
-  local target
 
-  [ -d "$dest_dir" ] || return 0
+  for dest_dir in "${LEGACY_DEST_DIRS[@]}"; do
+    [ -d "$dest_dir" ] || continue
 
-  while IFS= read -r -d '' path; do
-    is_managed_link "$path" || continue
-    target="$(readlink "$path")"
-
-    if [ "$mode" = "stale" ] && [ -f "$target/SKILL.md" ]; then
-      continue
-    fi
-
-    rm -f "$path"
-    success "Unlinked → $path"
-  done < <(find "$dest_dir" -mindepth 1 -maxdepth 1 -type l -print0)
+    while IFS= read -r -d '' path; do
+      is_legacy_managed_link "$path" || continue
+      rm -f "$path"
+      success "Removed legacy link → $path"
+    done < <(find "$dest_dir" -mindepth 1 -maxdepth 1 -type l -print0)
+  done
 }
 
-link_skill() {
-  local skill_dir="$1"
-  local dest_dir="$2"
-  local skill_name
-  local dest
+remove_skills() {
+  [ "$#" -gt 0 ] || return 0
 
-  skill_name="$(basename "$skill_dir")"
-  dest="$dest_dir/$skill_name"
-
-  if is_exact_link_to "$skill_dir" "$dest"; then
-    return 0
-  fi
-
-  if [ -e "$dest" ] || [ -L "$dest" ]; then
-    warn "Skill already exists; leaving unchanged: $dest"
-    return 0
-  fi
-
-  ln -s "$skill_dir" "$dest"
-  success "Linked → $dest"
+  require_npx
+  npx --yes skills@latest remove --global --yes "$@"
 }
 
 enable() {
-  local dest_dir
-  local skill_dir
-  local failed=0
+  local skill
+  local current_skill
+  local found
+  local -a current_skills=()
+  local -a previous_skills=()
+  local -a stale_skills=()
 
-  for dest_dir in "${DEST_DIRS[@]}"; do
-    if ! prepare_destination "$dest_dir"; then
-      failed=1
-      continue
-    fi
+  require_npx
+  mapfile -t current_skills < <(collect_skills)
 
-    remove_managed_links "$dest_dir" stale
+  if [ "${#current_skills[@]}" -eq 0 ]; then
+    warn "No skills found in $SKILLS_DIR"
+    return 0
+  fi
 
-    for skill_dir in "$SKILLS_DIR"/*; do
-      [ -d "$skill_dir" ] || continue
+  if [ -f "$STATE_FILE" ]; then
+    mapfile -t previous_skills < <(sed '/^[[:space:]]*$/d' "$STATE_FILE")
+  fi
 
-      if [ ! -f "$skill_dir/SKILL.md" ]; then
-        warn "Skipping directory without SKILL.md: $skill_dir"
-        continue
+  for skill in "${previous_skills[@]}"; do
+    found=0
+    for current_skill in "${current_skills[@]}"; do
+      if [ "$skill" = "$current_skill" ]; then
+        found=1
+        break
       fi
-
-      link_skill "$skill_dir" "$dest_dir"
     done
+    [ "$found" -eq 1 ] || stale_skills+=("$skill")
   done
 
-  return "$failed"
+  remove_legacy_links
+  remove_skills "${stale_skills[@]}"
+
+  npx --yes skills@latest add "$MODULE_DIR" \
+    --global \
+    --skill '*' \
+    --agent "${TARGET_AGENTS[@]}" \
+    --yes
+
+  mkdir -p "$STATE_DIR"
+  printf '%s\n' "${current_skills[@]}" > "$STATE_FILE"
 }
 
 disable() {
-  local dest_dir
+  local -a installed_skills=()
 
-  for dest_dir in "${DEST_DIRS[@]}"; do
-    remove_managed_links "$dest_dir" all
-  done
+  remove_legacy_links
+
+  if [ -f "$STATE_FILE" ]; then
+    mapfile -t installed_skills < <(sed '/^[[:space:]]*$/d' "$STATE_FILE")
+    remove_skills "${installed_skills[@]}"
+    rm -f "$STATE_FILE"
+    rmdir "$STATE_DIR" 2>/dev/null || true
+  fi
 }
 
 case "${1:-}" in

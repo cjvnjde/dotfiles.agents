@@ -29,19 +29,24 @@ Or run this module directly:
 bash agents/setup.sh enable
 ```
 
-Installer creates individual symlinks for every skill in both locations:
+The module uses the latest [`skills`](https://github.com/vercel-labs/skills) CLI non-interactively:
 
-```text
-~/.claude/skills/<skill-name> -> <dotfiles>/agents/skills/<skill-name>
-~/.agents/skills/<skill-name> -> <dotfiles>/agents/skills/<skill-name>
+```bash
+npx --yes skills@latest add ./agents \
+  --global \
+  --skill '*' \
+  --agent pi codex claude-code zed universal \
+  --yes
 ```
 
-Existing destination directories and unrelated skills remain untouched. Name conflicts are reported and skipped. Re-running installer adds new skills, keeps current links, and removes stale links previously pointing into this repository.
+The CLI installs canonical copies under `~/.agents/skills/` and links them into the global directories for Pi, Codex, Claude Code, Zed, and universal agents. Re-running setup refreshes every skill from this repository. The module records installed names under `$XDG_STATE_HOME/dotfiles/agents-skills` (or `~/.local/state/dotfiles/agents-skills`) so removed skills can be cleaned up safely.
 
-## Remove links
+Node.js and `npx` are required. Unrelated skill names remain untouched; an existing skill with the same name is managed by the `skills` CLI.
+
+## Remove skills
 
 ```bash
 bash agents/setup.sh disable
 ```
 
-Only skill symlinks pointing directly into this repository's `agents/skills/` directory are removed. Skill files in dotfiles and unrelated installed skills remain untouched.
+The module asks the `skills` CLI to remove only the skill names recorded during installation. It also cleans up legacy direct symlinks from older versions of this setup. Skill files in dotfiles and unrelated installed skills remain untouched.
