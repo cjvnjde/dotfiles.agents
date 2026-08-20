@@ -22,6 +22,14 @@ SCRIPT_PATH="$(resolve_script_path "${BASH_SOURCE[0]}")"
 MODULE_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd -P)"
 ROOT_DIR="$(cd "$MODULE_DIR/.." && pwd -P)"
 SKILLS_DIR="$MODULE_DIR/skills"
+AGENTS_FILE="$MODULE_DIR/AGENTS.md"
+GLOBAL_INSTRUCTION_FILES=(
+  "$HOME/.agents/AGENTS.md"
+  "$HOME/.pi/agent/AGENTS.md"
+  "$HOME/.claude/CLAUDE.md"
+  "$HOME/.config/zed/AGENTS.md"
+  "$HOME/.config/opencode/AGENTS.md"
+)
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
 STATE_FILE="$STATE_DIR/agents-skills"
 TARGET_AGENTS=(
@@ -103,6 +111,7 @@ remove_skills() {
 }
 
 enable() {
+  local instruction_file
   local skill
   local current_skill
   local found
@@ -110,6 +119,9 @@ enable() {
   local -a previous_skills=()
   local -a stale_skills=()
 
+  for instruction_file in "${GLOBAL_INSTRUCTION_FILES[@]}"; do
+    link_path "$AGENTS_FILE" "$instruction_file"
+  done
   require_npx
   mapfile -t current_skills < <(collect_skills)
 
@@ -147,8 +159,12 @@ enable() {
 }
 
 disable() {
+  local instruction_file
   local -a installed_skills=()
 
+  for instruction_file in "${GLOBAL_INSTRUCTION_FILES[@]}"; do
+    unlink_path "$AGENTS_FILE" "$instruction_file"
+  done
   remove_legacy_links
 
   if [ -f "$STATE_FILE" ]; then
