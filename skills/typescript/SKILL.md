@@ -53,6 +53,12 @@ const parseUser = (input: string): User => {
 
 Before adding an annotation or assertion, improve inference if possible.
 
+## Type aliases and interfaces
+
+- Prefer `type` for type definitions, including object shapes.
+- Use `interface` only for class-oriented contracts intended to be implemented by classes or extended by related interfaces.
+- Types merely consumed by a class, such as constructor options, unions, callbacks, and derived types, still use `type`.
+
 ## Make the compiler do the work
 
 Prefer:
