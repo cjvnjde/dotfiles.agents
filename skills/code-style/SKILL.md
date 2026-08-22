@@ -25,6 +25,28 @@ Generated, vendored, minified, snapshot, and lock files keep their required form
 5. Re-read the changed region. Confirm formatting caused no semantic change.
 6. Run the narrow syntax, compile, or behavior check appropriate to the changed code. Never use a formatting command as validation.
 
+## File naming and module boundaries
+
+- Follow filename conventions required or established by the language,
+  ecosystem, framework, build tooling, and repository. Language-specific
+  standards take precedence over a universal casing rule.
+- Choose a descriptive filename that lets a reader predict the file's primary
+  content. When a file has one exported declaration, prefer a filename that
+  closely matches that export's name in the idiomatic filename casing. This is
+  a recommendation, not a hard rule.
+- Prefer one export per source file when that creates a clearer name and module
+  boundary. Multiple exports are valid when they form one cohesive concept or
+  splitting them would harm locality.
+- Keep any number of non-exported helpers, types, constants, and implementation
+  details with the exported code they support. Do not split file-private code
+  merely to satisfy the one-export preference.
+- For a file with multiple exports, name the shared concept rather than one
+  arbitrary member. Avoid vague names such as `utils`, `helpers`, `common`, or
+  `misc` unless the surrounding scope makes the responsibility precise.
+- Preserve tool- or framework-required filenames and established test,
+  platform, generated-file, and entry-point patterns. Apply these preferences
+  to new files and intentional reorganizations; do not rename unrelated files.
+
 ## Layout
 
 - Use spaces, not tabs, unless syntax or an explicit project rule requires tabs.

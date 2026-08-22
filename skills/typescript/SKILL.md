@@ -184,6 +184,33 @@ Do not scatter defensive checks throughout internal code for states the type sys
 
 Keep expression-bodied arrows for one simple expression. Use a block for multiple logical steps.
 
+## File naming and exports
+
+- Follow repository lint rules and the host framework's required filenames
+  first. TypeScript has no universal filename casing standard; do not introduce
+  a second convention beside an established one.
+- When the project is unconstrained, use lowercase `kebab-case` for `.ts` and
+  `.tsx` filenames. This is the broad modern ecosystem default. Preserve
+  `PascalCase` component filenames or `snake_case` modules where the repository
+  already uses those conventions.
+- Make a filename closely match its primary export after converting the
+  identifier to the chosen file case: `UserProfile` becomes
+  `user-profile.tsx`, `createSession` becomes `create-session.ts`, and a sole
+  exported object named `userSchema` belongs in `user-schema.ts`.
+- Prefer one export per file when it gives the module one obvious public
+  concept. This is a recommendation, not a restriction: keep multiple
+  coordinated exports together when they form a cohesive API.
+- Keep non-exported helpers, local types, constants, and implementation details
+  in the file that uses them. They do not count against the one-export
+  preference and should not be extracted merely to reduce declarations.
+- Name a multi-export file after its narrow shared theme, such as
+  `date-formatters.ts`; avoid generic catch-alls such as `utils.ts`,
+  `helpers.ts`, `common.ts`, or `types.ts` when a domain-specific name is
+  available.
+- Keep framework-reserved names such as `page.tsx`, `layout.tsx`, `route.ts`,
+  and `index.ts` exact. Match companion files to their source using the
+  project's suffix pattern, such as `.test.ts`, `.spec.ts`, or `.d.ts`.
+
 ## Project compatibility
 
 Follow the host project's formatter, lint rules, module conventions, naming, file organization, runtime, and framework conventions. Do not introduce unrelated style changes while editing TypeScript.
