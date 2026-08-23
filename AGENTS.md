@@ -7,5 +7,4 @@
 
 # Attribution
 
-- Never add attribution, authorship, provenance, or generated-by notices to text, code, comments, documentation, commit messages, or any other artifact.
-- Never add `Co-authored-by`, `Signed-off-by`, `Generated-by`, or similar commit trailers.
+- Never add attribution, authorship, provenance, or generated-by notices to text, code, comments, or documentation.
