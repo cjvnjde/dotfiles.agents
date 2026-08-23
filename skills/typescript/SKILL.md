@@ -319,18 +319,28 @@ Before finishing a new or changed module API:
   `.tsx` filenames. This is the broad modern ecosystem default. Preserve
   `PascalCase` component filenames or `snake_case` modules where the repository
   already uses those conventions.
-- Make a filename closely match its primary export after converting the
-  identifier to the chosen file case: `UserProfile` becomes
-  `user-profile.tsx`, `createSession` becomes `create-session.ts`, and a sole
-  exported object named `userSchema` belongs in `user-schema.ts`.
-- Organize files around cohesive public concepts or capabilities. Keep
-  coordinated primitives together when they share invariants or lifecycle.
-- Use one export per file only when that export independently constitutes the
-  module's concept. Never add forwarding wrappers or one-function files solely
-  to satisfy a size or export-count preference.
+- Make a filename closely match its primary public operation after converting
+  the identifier to the chosen file case: `UserProfile` becomes
+  `user-profile.tsx`, `createSession` becomes `create-session.ts`, and a public
+  object named `userSchema` belongs in `user-schema.ts`.
+- Organize files around one cohesive public concept, usually represented by one
+  primary exported runtime operation. Prefer this boundary when the operation
+  is independently useful.
+- Keep multiple public operations together when they form one cohesive
+  capability, share invariants or lifecycle, or are safer and clearer when
+  maintained together.
+- Split public operations when they are independently meaningful and usable,
+  own distinct responsibilities, can change independently, and do not depend
+  on shared private state or strict ordering.
+- Keep companion exported types or constants beside the runtime value they
+  describe. They expose the same public concept and do not violate this
+  preference.
 - Keep non-exported helpers, local types, constants, and implementation details
-  in the file that uses them. They do not count against the one-export
-  preference and should not be extracted merely to reduce declarations.
+  in the file that uses them. Never extract them merely to reduce declaration
+  or export count.
+- Split by responsibility and independent usability, not by line count or
+  export count. Never add forwarding wrappers, artificial files, or barrels
+  solely to enforce one export per file.
 - Name a multi-export file after its narrow shared theme, such as
   `date-formatters.ts`; avoid generic catch-alls such as `utils.ts`,
   `helpers.ts`, `common.ts`, or `types.ts` when a domain-specific name is

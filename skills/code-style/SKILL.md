@@ -30,16 +30,26 @@ Generated, vendored, minified, snapshot, and lock files keep their required form
 - Follow filename conventions required or established by the language,
   ecosystem, framework, build tooling, and repository. Language-specific
   standards take precedence over a universal casing rule.
-- Choose a descriptive filename that lets a reader predict the file's primary
-  content. When a file has one exported declaration, prefer a filename that
-  closely matches that export's name in the idiomatic filename casing. This is
-  a recommendation, not a hard rule.
-- Prefer one export per source file when that creates a clearer name and module
-  boundary. Multiple exports are valid when they form one cohesive concept or
-  splitting them would harm locality.
+- Choose a descriptive filename that lets a reader predict the file's public
+  concept. When a file has one primary public operation, prefer a filename that
+  closely matches that operation's name in the idiomatic filename casing. This
+  is a recommendation, not a hard rule.
+- Prefer one primary public runtime operation per source file when it creates a
+  clear, independently useful module boundary.
 - Keep any number of non-exported helpers, types, constants, and implementation
-  details with the exported code they support. Do not split file-private code
-  merely to satisfy the one-export preference.
+  details with the public operation they support. Never extract file-private
+  code merely to reduce the number of declarations.
+- Companion exported types or constants belong beside the runtime value they
+  describe and do not violate the one-public-concept preference.
+- Keep multiple public operations together when they form one cohesive
+  capability, share invariants or lifecycle, or are safer and clearer when
+  maintained together.
+- Split public operations when they are independently meaningful and usable,
+  own distinct responsibilities, can change independently, and do not depend
+  on shared private state or strict ordering.
+- Split by responsibility and independent usability, not by line count or
+  export count. Never create forwarding wrappers, artificial files, or barrels
+  solely to enforce one export per file.
 - For a file with multiple exports, name the shared concept rather than one
   arbitrary member. Avoid vague names such as `utils`, `helpers`, `common`, or
   `misc` unless the surrounding scope makes the responsibility precise.
@@ -216,3 +226,8 @@ Declarations stay together because they calculate one result. Blank line marks t
 - Wrapped constructs use stable indentation and legal trailing commas.
 - No tabs, trailing whitespace, stacked blank lines, or unrelated reformatting.
 - No formatting tool was run or configured.
+
+## Output
+
+Report the focused syntax, compile, or behavior check run and any intentional
+exception to these rules.
