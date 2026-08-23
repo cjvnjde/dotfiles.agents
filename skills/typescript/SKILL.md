@@ -1,19 +1,20 @@
 ---
 name: typescript
-description: TypeScript expert for inference-first, minimal, fully typed code. ALWAYS invoke before creating, editing, reviewing, or refactoring TypeScript or TSX files, or changing TypeScript-specific types and configuration. Do not modify TypeScript directly—use this skill first.
+description: TypeScript expert for inference-first, minimal, fully typed, modular code with framework-independent reusable boundaries. ALWAYS invoke before creating, editing, reviewing, or refactoring TypeScript or TSX files, or changing TypeScript-specific types and configuration. Use it alongside applicable framework-specific guidance. Do not begin TypeScript work before applying this skill. Do not invoke for prose-only architecture guidance that does not involve TypeScript work.
 ---
 
 # TypeScript
 
-Write minimal, strongly typed TypeScript. Let TypeScript infer as much as possible while preserving meaningful contracts and making invalid states difficult to represent.
+Write minimal, strongly typed, modular TypeScript. Let TypeScript infer as much as possible while preserving meaningful contracts, making invalid states difficult to represent, and keeping reusable logic independent of consumer frameworks.
 
 ## Workflow
 
-1. Read the relevant TypeScript configuration, lint rules, and nearby code before editing.
+1. Read the relevant TypeScript configuration, lint rules, nearby code, and applicable framework guidance before editing.
 2. Identify the authoritative values, schemas, functions, and types from which other types can be derived.
-3. Implement the smallest change that preserves or improves type safety.
-4. Remove redundant annotations, assertions, generic arguments, and duplicated shapes introduced or exposed by the change.
-5. Run the project's focused type-check, tests, lint, and formatter when available.
+3. Before implementation, identify reusable logic, platform and framework boundaries, resource ownership, and the smallest independently useful operations.
+4. Implement the smallest change that preserves or improves type safety.
+5. Remove redundant annotations, assertions, generic arguments, and duplicated shapes introduced or exposed by the change.
+6. Run the project's focused type-check, tests, lint, and formatter when available.
 
 ## Inference first
 
@@ -197,6 +198,100 @@ Do not scatter defensive checks throughout internal code for states the type sys
 
 Keep expression-bodied arrows for one simple expression. Use a block for multiple logical steps.
 
+## Module and API design
+
+Design modules around cohesive capabilities. Callers should be able to use each
+public operation independently and compose operations into their own workflows.
+
+### Boundaries and dependencies
+
+- Keep reusable domain logic and platform integrations independent of UI
+  frameworks unless the abstraction's explicit purpose is framework
+  integration. Framework adapters may be reusable within their framework.
+- Keep framework-local component behavior cohesive unless it has a meaningful
+  independent contract. Do not extract code merely to call it
+  framework-independent.
+- Do not pass framework setters, stores, lifecycle hooks, or framework-owned
+  state containers into otherwise reusable logic. Pass ordinary state values as
+  explicit inputs, return results or expose subscriptions, and let the
+  framework-facing layer translate them into its own state.
+- Pass required dependencies and resources explicitly. Prefer returned values
+  and handles over hidden mutable singletons, implicit initialization, and
+  module-level consumer registration.
+- Depending directly on a real platform API is appropriate when the module
+  represents that platform integration. Framework independence does not
+  require speculative abstractions over the actual runtime boundary.
+
+### Operations and lifecycle
+
+- Start a public API with the smallest complete operations consumers need. Each
+  exported function should perform one coherent action and require only the
+  dependencies or resources needed for that action.
+- Separate resource acquisition, current-state queries, commands, and
+  subscriptions in the callable API when those capabilities exist. This does
+  not require separate files or require every API to have every category.
+- An operation may require an explicitly acquired resource. A query may perform
+  I/O but should not start a subscription or perform unrelated domain
+  mutations; a command should not register a consumer; acquisition should not
+  start unrelated long-lived behavior.
+- Every subscription must expose caller-controlled cleanup using the project's
+  established convention, such as an unsubscribe function, disposable handle,
+  or abort controller. When setup is asynchronous, resolve to the cleanup
+  capability. Cleanup must release the registrations created by that call and
+  should be safe to use more than once when practical.
+- When acquisition creates an owned resource, make ownership clear and expose
+  an explicit way to close, dispose of, or release it.
+- Prefer functions for stateless operations. Introduce a class, manager,
+  service, or controller only when shared identity, mutable state, or lifecycle
+  is essential to the abstraction.
+
+### Composition and function size
+
+- Keep workflow orchestration in the consuming application or another clear
+  composition root. A convenience orchestrator may compose the same public
+  primitives and add policy or defaults, but it must not be the only way to use
+  them.
+- An orchestrator that acquires resources or starts subscriptions must preserve
+  caller control by returning the aggregate result, handle, or cleanup it
+  creates.
+- Split functions by responsibility, not by line count. Keep a transaction or
+  state transition atomic when exposing its steps would permit invalid
+  intermediate states, violate ordering, or weaken consistency.
+- Use private helpers to organize a cohesive implementation when useful; they
+  do not need to become public operations. Avoid forwarding wrappers and
+  one-function files created only to appear modular.
+
+Prefer independently composable primitives:
+
+```ts
+const resource = await openResource(options);
+const state = getState(resource);
+const unsubscribe = onStateChange(resource, listener);
+```
+
+Avoid making unrelated behavior available only through one controlling entry
+point:
+
+```ts
+startResource({
+  setState,
+  onEvent,
+});
+```
+
+### Design check
+
+Before finishing a new or changed module API:
+
+1. Verify each public operation can be called without initializing unrelated
+   capabilities.
+2. Confirm reusable modules do not import a consumer framework; keep intentional
+   framework dependencies in clearly named framework-facing code.
+3. Match every listener, registration, and owned resource with caller-accessible
+   cleanup.
+4. Confirm smaller public operations do not expose invalid intermediate states
+   or break required ordering.
+
 ## File naming and exports
 
 - Follow repository lint rules and the host framework's required filenames
@@ -210,9 +305,11 @@ Keep expression-bodied arrows for one simple expression. Use a block for multipl
   identifier to the chosen file case: `UserProfile` becomes
   `user-profile.tsx`, `createSession` becomes `create-session.ts`, and a sole
   exported object named `userSchema` belongs in `user-schema.ts`.
-- Prefer one export per file when it gives the module one obvious public
-  concept. This is a recommendation, not a restriction: keep multiple
-  coordinated exports together when they form a cohesive API.
+- Organize files around cohesive public concepts or capabilities. Keep
+  coordinated primitives together when they share invariants or lifecycle.
+- Use one export per file only when that export independently constitutes the
+  module's concept. Never add forwarding wrappers or one-function files solely
+  to satisfy a size or export-count preference.
 - Keep non-exported helpers, local types, constants, and implementation details
   in the file that uses them. They do not count against the one-export
   preference and should not be extracted merely to reduce declarations.
@@ -227,3 +324,10 @@ Keep expression-bodied arrows for one simple expression. Use a block for multipl
 ## Project compatibility
 
 Follow the host project's formatter, lint rules, module conventions, naming, file organization, runtime, and framework conventions. Do not introduce unrelated style changes while editing TypeScript.
+
+## Output
+
+When applicable, report changed public contracts and module boundaries and
+where framework-specific composition lives. Always report the focused checks
+run. For lifecycle APIs, state who owns each resource and how callers release
+it.
