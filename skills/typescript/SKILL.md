@@ -198,6 +198,24 @@ Do not scatter defensive checks throughout internal code for states the type sys
 
 Keep expression-bodied arrows for one simple expression. Use a block for multiple logical steps.
 
+### Local functions
+
+Use `const` arrow functions for functions declared inside another function,
+including named local helpers and callbacks. Declare each local arrow before its
+first use because it is not hoisted.
+
+```ts
+const handleMessage = (message: Message) => {
+  processMessage(message);
+};
+```
+
+Keep a nested function declaration only when an arrow cannot express the
+required semantics, such as a generator or intentional dynamic `this` or
+`arguments`, or when an established project convention requires it. This rule
+does not apply to object or class methods or require moving a local helper to
+module scope.
+
 ## Module and API design
 
 Design modules around cohesive capabilities. Callers should be able to use each
