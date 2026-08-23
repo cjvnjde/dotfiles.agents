@@ -103,11 +103,12 @@ Apply these rules:
 1. At the same indentation level, put one blank line between adjacent visual units when either unit is a compound block.
 2. Put one blank line between a compound block and a preceding or following simple group at the same indentation level.
 3. Keep simple statements together when they form one cohesive step. Separate different phases or concerns with one blank line.
-4. Indentation already separates a parent block from its direct nested child. Do not add a blank line merely because a nested block is the first or last statement in its parent.
-5. Sibling blocks inside the same parent share an indentation level, so separate them with one blank line.
-6. Keep continuation clauses attached to their originating block. Never place a blank line before `else`, `catch`, `finally`, or the closing `while` of a `do` statement.
-7. Do not put a blank line between a comment, decorator, annotation, or label and the construct it belongs to.
-8. Do not add blank lines inside an empty block. Empty vertical space must separate meaningful units, not pad braces.
+4. Treat a `return` statement as its own simple group. When another statement at the same indentation level precedes it, put one blank line before `return`. Do not add blank padding when `return` is the first statement in a block.
+5. Indentation already separates a parent block from its direct nested child. Do not add a blank line merely because a nested block is the first or last statement in its parent.
+6. Sibling blocks inside the same parent share an indentation level, so separate them with one blank line.
+7. Keep continuation clauses attached to their originating block. Never place a blank line before `else`, `catch`, `finally`, or the closing `while` of a `do` statement.
+8. Do not put a blank line between a comment, decorator, annotation, or label and the construct it belongs to.
+9. Do not add blank lines inside an empty block. Empty vertical space must separate meaningful units, not pad braces.
 
 ### Same-level blocks need a blank line
 
@@ -153,7 +154,7 @@ if (outerCondition) {
 
 The nested `if` statements and `finish()` are separate same-level units, so blank lines separate them.
 
-### Cohesive simple statements may stay together
+### Return starts a new visual unit
 
 ```js
 const width = bounds.right - bounds.left;
@@ -178,7 +179,7 @@ Declarations stay together because they calculate one result. Blank line marks t
 
 - Syntax and behavior unchanged by formatting.
 - Indentation reflects scope.
-- Same-level compound blocks have one blank line between visual units.
+- Same-level statements preceding `return` are separated from it by one blank line.
 - Nested parent-child blocks rely on indentation rather than extra padding.
 - Continuation clauses remain attached.
 - Wrapped constructs use stable indentation and legal trailing commas.
