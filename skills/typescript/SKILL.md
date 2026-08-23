@@ -125,9 +125,14 @@ Do not write explicit generic arguments unless inference cannot determine the in
 Represent valid states directly with discriminated unions:
 
 ```ts
+const RESULT_STATUS = {
+  SUCCESS: "success",
+  ERROR: "error",
+} as const;
+
 type Result<T> =
-  | { status: "success"; data: T }
-  | { status: "error"; error: Error };
+  | { status: typeof RESULT_STATUS.SUCCESS; data: T }
+  | { status: typeof RESULT_STATUS.ERROR; error: Error };
 ```
 
 Do not model mutually exclusive states as one object with unrelated optional fields.
@@ -137,10 +142,10 @@ Use exhaustive handling when all variants must be covered:
 ```ts
 const handleResult = (result: Result<User>) => {
   switch (result.status) {
-    case "success":
+    case RESULT_STATUS.SUCCESS:
       return result.data;
 
-    case "error":
+    case RESULT_STATUS.ERROR:
       throw result.error;
 
     default: {
@@ -153,7 +158,7 @@ const handleResult = (result: Result<User>) => {
 
 ## Constants and literal unions
 
-Prefer literal unions or const objects over `enum` for new APIs unless the project or an interoperability boundary requires an enum.
+Represent finite categorical string or numeric values, such as statuses, event types, modes, and directions, with a named `as const` object. Use the object as the single runtime source of truth instead of inline literals or `enum`, unless the project or an interoperability boundary requires an enum.
 
 ```ts
 const DIRECTION = {
@@ -164,7 +169,9 @@ const DIRECTION = {
 type Direction = (typeof DIRECTION)[keyof typeof DIRECTION];
 ```
 
-Use `satisfies` when a value must conform to another contract while retaining its precise inferred type. Use `as const` only when narrow or readonly literal inference is useful; do not add it mechanically.
+Derive a union from the object's values when a type is needed. Reference the object properties in discriminated unions, switch cases, comparisons, object creation, and function calls. Never repeat a categorical literal after its const object exists.
+
+Use `satisfies` when a value must conform to another contract while retaining its precise inferred type. Use `as const` for categorical value objects. Otherwise, use it only when narrow or readonly literal inference is useful; do not add it mechanically.
 
 ## Boundaries
 

@@ -90,6 +90,36 @@ Generated, vendored, minified, snapshot, and lock files keep their required form
 - Keep short signatures on one line. For multiline signatures, place one parameter per line and keep return-type or body syntax aligned with project convention.
 - Do not manually preserve unstable horizontal alignment after wrapping.
 
+## Guard clauses and boolean expressions
+
+- Use guard clauses for prerequisites, invalid states, and early failures before the main operation.
+- Prefer an early return to an `else` when the preceding branch always returns, throws, or otherwise exits.
+- Do not combine a prerequisite with a traversal, callback, function call, or state change through `&&` or `||`. Write the prerequisite as a separate guard.
+- Reserve chained boolean expressions for short, cohesive predicates whose terms operate at the same logical level.
+
+Avoid combining a prerequisite and a collection operation:
+
+```js
+function haveSameItems(current, next) {
+  return (
+    current.length === next.length &&
+    current.every((item, index) => sameItem(item, next[index]))
+  );
+}
+```
+
+Separate the prerequisite with a guard clause:
+
+```js
+function haveSameItems(current, next) {
+  if (current.length !== next.length) {
+    return false;
+  }
+
+  return current.every((item, index) => sameItem(item, next[index]));
+}
+```
+
 ## Statement-block separation
 
 Treat code as visual units at each indentation level:
@@ -182,6 +212,7 @@ Declarations stay together because they calculate one result. Blank line marks t
 - Same-level statements preceding `return` are separated from it by one blank line.
 - Nested parent-child blocks rely on indentation rather than extra padding.
 - Continuation clauses remain attached.
+- Prerequisites and early failures use guard clauses instead of mixed-level boolean chains.
 - Wrapped constructs use stable indentation and legal trailing commas.
 - No tabs, trailing whitespace, stacked blank lines, or unrelated reformatting.
 - No formatting tool was run or configured.
