@@ -1,161 +1,241 @@
 ---
 name: skill-authoring
-argument-hint: "[skill request, skill name, or path]"
-description: Creates and fixes Claude Code and Agent Skills. ALWAYS invoke this skill for SKILL.md authoring, review, testing, debugging, or activation issues. Do not handle them directly.
+description: Create, review, repair, test, and debug Agent Skills and SKILL.md packages. ALWAYS use this skill for skill structure, frontmatter, activation, trigger collisions, supporting resources, scripts, validation, or portability across agent hosts. Do not author or modify a SKILL.md without applying this workflow.
 ---
 
 # Skill Authoring
 
-Create or revise Claude Code skills that are discoverable, narrowly routed, concise, safe, and testable.
+Create portable, discoverable, narrowly routed, concise, safe, and testable skills.
 
-## Core rules
-
-- Follow the current Claude Code `SKILL.md` schema. Do not add undocumented routing fields such as `keywords`.
-- Treat `description` as the primary auto-activation contract.
-- Put the most important trigger first because skill-listing descriptions can be truncated.
-- Use directive routing: explicitly require invocation and block the action Claude would otherwise perform directly.
-- Keep trigger domains distinct from other installed skills. Do not make every skill claim broad terms such as `code`, `debug`, `files`, or `project`.
-- Keep the skill body operational and concise. State what to do, not a long explanation of why. Keep `SKILL.md` below 500 lines and split large material into supporting files.
-- Prefer fixing the description over adding prompt hooks. Use hooks only when deterministic enforcement is genuinely required.
-- Do not rely on `CLAUDE.md` to compensate for an ambiguous skill description.
-- Write descriptions in third person while retaining explicit directive routing.
-- Prefer stable rules over version- or date-specific instructions that will become stale.
+Default to the Agent Skills standard. Add host-specific behavior only when the target host is explicitly requested.
 
 ## Workflow
 
-### 1. Determine the contract
+### 1. Define the routing contract
 
-From the request and repository, identify:
+Identify:
 
-1. **Capability** — the specialized work this skill performs.
-2. **Positive triggers** — phrases, concepts, file types, tools, and user intents that should activate it.
-3. **Implicit triggers** — natural requests that need the skill without naming it.
-4. **Negative boundaries** — nearby requests that must not activate it.
-5. **Bypass action** — what Claude is likely to do directly instead of invoking the skill.
-6. **Invocation mode** — automatic, manual, or both.
-7. **Execution context** — inline or `context: fork`.
-8. **Required permissions** — tools that need pre-approval or must be unavailable.
+- **Capability** — the specialized work the skill performs.
+- **Positive triggers** — natural requests that should activate it.
+- **Implicit triggers** — requests that need it without naming its domain.
+- **Negative boundaries** — nearby requests that must not activate it.
+- **Bypass action** — what the agent might incorrectly do instead.
+- **Invocation requirement** — automatic, manual, or both.
+- **Target hosts** — only when host-specific behavior is required.
 
-Inspect existing `.claude/skills/` directories when available. Compare names and descriptions before selecting triggers.
+Inspect neighboring installed skills when available. Narrow overlapping descriptions by intent, technology, file type, lifecycle phase, or directory scope.
 
-### 2. Choose frontmatter deliberately
+Ask the user only when an unresolved decision materially changes the skill. Prefer the host's structured user-input tool when available:
 
-Use only fields required by the workflow.
+- Claude Code: `AskUserQuestion`
+- oh-my-pi: `ask`
+- pi.dev: `ask_user` when an ask-user extension is installed
 
-```yaml
----
-name: <kebab-case-name>
-argument-hint: "[optional arguments]"
-description: <domain and capability>. ALWAYS invoke this skill when the user asks about <specific natural triggers>. Do not <likely bypass action> directly — use this skill first.
----
-```
+Otherwise, ask one concise question in chat. Do not require these tool names in portable frontmatter.
 
-Apply these rules:
-
-- `name`: short, specific, lowercase kebab-case; maximum 64 characters; only lowercase letters, numbers, and hyphens; the name must not contain the reserved words `claude` or `anthropic`.
-- `description`: explain both what the skill does and when it must run.
-- Start with the highest-value trigger and capability.
-- Include explicit terms, common synonyms, and important implicit intents.
-- Use `ALWAYS invoke this skill` for requests inside the skill's domain.
-- End with a negative constraint that blocks the most probable bypass path.
-- Keep `description` below 1,024 characters for Agent Skills compatibility and keep `description` plus `when_to_use` below Claude Code's listing limit. Prefer one strong description over duplicated trigger prose.
-- Add `when_to_use` only when compact examples materially clarify routing.
-- Use `disable-model-invocation: true` for destructive, expensive, deployment, publishing, or intentionally manual workflows.
-- Use `user-invocable: false` only for background knowledge that should not appear in the slash menu.
-- Use `paths` when activation must be limited to particular files or directories.
-- Use `context: fork` for isolated research or large workflows that should not pollute the main context.
-- Add `agent`, `model`, `effort`, or `background` only when the request justifies them.
-- Remember that `allowed-tools` pre-approves tools for the invocation turn; it does not restrict all other tools.
-- Use `disallowed-tools` when a tool must be unavailable while the skill is active.
-
-### 3. Write executable instructions
-
-Structure the body around actions:
-
-1. State the objective.
-2. Define inputs and source-of-truth order.
-3. Provide ordered execution steps.
-4. Define decision points and stop conditions.
-5. Specify validation checks.
-6. Define the final output contract.
-
-Use imperative language. Match instruction freedom to task fragility: use heuristics for flexible tasks, parameterized patterns for moderately constrained tasks, and exact commands with validation for fragile operations. Make important constraints explicit with `MUST`, `NEVER`, or `ONLY` when ambiguity would cause incorrect behavior.
-
-Prefer the general statement over the concrete instance. A named component, file, symbol, or value inside a rule becomes an anchor: readers pattern-match on that name and apply the rule only to look-alikes, missing every other case it covers. When a rule can be stated without naming a specific thing, state it without. Name one when it is the subject of the rule (a banned API, a required path, a fixed command), when the rule is genuinely ambiguous without it, or when a single example is the cheapest way to make an abstract constraint executable — then keep it to one and make clear it is illustrative.
-
-Do not:
-
-- Repeat the frontmatter description throughout the body.
-- Add generic advice unrelated to execution.
-- Invent project commands, paths, APIs, tools, or credentials.
-- Hide critical instructions in examples.
-- Put large reference material directly in `SKILL.md`.
-
-For substantial material, create supporting files such as:
+### 2. Use the portable package layout
 
 ```text
 <skill-name>/
 ├── SKILL.md
-├── references/
-├── examples/
-├── templates/
-└── scripts/
+├── references/    # Optional documentation and examples
+├── scripts/       # Optional executable helpers
+├── assets/        # Optional templates and static data
+└── evals/         # Optional activation and output tests
 ```
 
-Reference supporting resources explicitly and load them only when needed. Keep references one level deep from `SKILL.md`; add a table of contents to reference files longer than about 100 lines. Use `${CLAUDE_SKILL_DIR}` for portable paths to bundled files and `${CLAUDE_PROJECT_DIR}` for the active project.
+Apply these rules:
 
-### 4. Prevent trigger collisions
+- Create only directories the skill actually needs.
+- Put detailed documentation and examples in `references/`.
+- Put reusable templates, schemas, sample data, and static resources in `assets/`.
+- Put executable helpers in `scripts/`.
+- Keep each skill directly below the configured skills root for broad host compatibility.
+- Reference bundled files with paths relative to the skill root.
+- Keep referenced resources one level deep where practical.
+- Do not use host-specific path variables in a portable skill.
 
-Before finalizing, compare the proposed description with existing skills.
+### 3. Write portable frontmatter
 
-- Narrow overlapping nouns with intent, technology, file type, lifecycle phase, or directory scope.
-- Do not let two skills both claim the same general request.
-- Where overlap is intentional, state the selection boundary in each description.
-- Prefer one orchestrating skill over several skills with indistinguishable triggers.
+Use this default:
 
-### 5. Build activation tests
+```yaml
+---
+name: <directory-name>
+description: <capability>. ALWAYS use this skill when <natural user intents and triggers>. Do not <likely bypass action> directly; apply this skill first.
+---
+```
 
-Create a compact test matrix containing:
+Rules:
 
-- At least 5 **should-trigger** prompts:
-  - direct name or exact term;
-  - common natural phrasing;
-  - synonym phrasing;
-  - implicit intent;
-  - a realistic edge case.
-- At least 3 **should-not-trigger** prompts:
-  - an adjacent domain;
-  - a superficially similar keyword with different intent;
-  - a request belonging to another skill.
+- `name` must match the parent directory.
+- Use 1–64 lowercase letters, numbers, and hyphens.
+- Do not use leading, trailing, or consecutive hyphens.
+- Keep `description` at or below 1,024 characters.
+- Describe both what the skill does and when to use it.
+- Put the highest-value capability and trigger first.
+- Describe user intent rather than internal implementation.
+- Include important natural phrasing, synonyms, and implicit intents.
+- Use directive routing only when the domain is narrow and unambiguous.
+- Do not let multiple skills claim the same broad triggers.
+- Do not add undocumented fields such as `keywords`.
 
-Evaluate activation and output quality separately. A skill invoking successfully does not prove its workflow is correct.
+Portable optional fields are:
 
-Run tests in fresh sessions so authoring context does not mask routing defects. Test every model the skill is expected to support. When available, use the official `skill-creator` evaluator for should-trigger and should-not-trigger comparisons.
+- `license`
+- `compatibility`
+- `metadata`
+- `allowed-tools`
 
-### 6. Diagnose activation failures
+Treat `allowed-tools` as experimental and omit it unless the target hosts support it and the skill genuinely needs pre-approved tools.
+
+Do not add host-specific fields to a universal skill, including:
+
+- `argument-hint`
+- `arguments`
+- `when_to_use`
+- `disable-model-invocation`
+- `user-invocable`
+- `paths`
+- `context`
+- `agent`
+- `model`
+- `effort`
+- `background`
+- `hooks`
+- `disallowed-tools`
+
+Add such fields only when creating a deliberately host-specific variant and after verifying the current host documentation.
+
+### 4. Write executable instructions
+
+Structure the body around:
+
+1. Objective.
+2. Inputs and source-of-truth order.
+3. Ordered workflow.
+4. Decision points and stop conditions.
+5. Validation.
+6. Final output contract.
+
+Use imperative language. State what to do rather than explaining the history or rationale behind every rule.
+
+Use `MUST`, `NEVER`, and `ONLY` only where ambiguity would cause incorrect or unsafe behavior.
+
+Do not:
+
+- Repeat the frontmatter description in the body.
+- Add generic advice unrelated to execution.
+- Invent commands, paths, APIs, credentials, or project conventions.
+- Hide important requirements only inside examples.
+- Overfit rules to one named file, symbol, or component.
+- Put large reference material directly in `SKILL.md`.
+
+Keep `SKILL.md` below 500 lines. Explicitly state when an agent should read each reference or use each asset.
+
+### 5. Bundle scripts safely
+
+Scripts are helpers, not independently activated capabilities. The skill activates first; the agent runs a script only when `SKILL.md` explicitly instructs it to do so.
+
+For every bundled script:
+
+- State its purpose and the exact condition for running it.
+- Document its inputs, outputs, prerequisites, and side effects.
+- Provide an exact command using a relative path and explicit interpreter:
+
+```bash
+python3 scripts/validate.py <path>
+bash scripts/check.sh <path>
+node scripts/generate.mjs <path>
+```
+
+- Prefer non-interactive scripts. Collect required user decisions before execution and pass them as arguments.
+- Make the script self-contained or document and pin its dependencies.
+- Do not hide package installation, network access, authentication, or external writes.
+- Validate arguments and reject ambiguous input instead of guessing.
+- Provide concise `--help` output and actionable error messages.
+- Send machine-readable data to stdout and diagnostics to stderr when appropriate.
+- Use meaningful exit codes.
+- Make retryable operations idempotent where practical.
+- Provide `--dry-run`, `--confirm`, or `--force` safeguards for destructive or stateful actions.
+- Never expose credentials or secret values in output.
+
+Do not run a script merely because it exists. Run it only at the workflow step that names it and only after its prerequisites are satisfied.
+
+### 6. Validate the package
+
+After creating or editing a skill, run the standard validator when available:
+
+```bash
+skills-ref validate <skill-directory>
+```
+
+Otherwise verify manually:
+
+- YAML frontmatter parses correctly.
+- `name` matches the directory.
+- `name` and `description` satisfy standard limits.
+- Only portable fields are present unless a host-specific variant was requested.
+- Every referenced file exists.
+- Every script command and prerequisite is documented.
+- No empty or unused supporting directories remain.
+- The body defines validation and output requirements.
+
+Fix validation failures and repeat until validation passes.
+
+### 7. Test routing and output
+
+Test activation separately from workflow quality.
+
+For activation tests, include realistic:
+
+- direct requests;
+- natural phrasing;
+- synonym phrasing;
+- implicit intent;
+- boundary and edge cases;
+- near-misses sharing similar keywords;
+- requests belonging to another skill.
+
+Start with a compact test set. When activation reliability matters, expand toward 8–10 should-trigger and 8–10 should-not-trigger cases.
+
+For output testing:
+
+- Start with 2–3 representative cases.
+- Include expected outputs and at least one edge case.
+- Compare the result with and without the skill, or against the previous version.
+- Run tests in fresh sessions.
+- Test each intended host and model when practical.
+- Use the host's skill evaluator when one is available.
+
+### 8. Diagnose activation failures
 
 Check in this order:
 
-1. Confirm the skill is located at `<scope>/.claude/skills/<name>/SKILL.md`.
-2. Validate YAML frontmatter and delimiters.
-3. Confirm the skill is listed by asking what skills are available.
-4. Ensure `disable-model-invocation` and skill visibility settings do not hide it.
-5. Verify the description contains words users naturally use.
-6. Move critical triggers earlier and shorten low-value prose.
-7. Remove trigger overlap with other skills.
-8. Test with a direct `/skill-name` invocation to separate discovery from workflow errors.
-9. Use `/doctor`, `/context`, and `--debug` to inspect listing budget or parsing problems.
-10. Add hooks only after description, visibility, placement, and collision problems are ruled out.
+1. Confirm the file is named exactly `SKILL.md`.
+2. Confirm the skill is in a directory scanned by the host.
+3. Confirm the host supports the directory depth being used.
+4. Validate frontmatter and YAML delimiters.
+5. Confirm the skill appears in the host's available-skills listing.
+6. Try explicit invocation to separate discovery problems from workflow problems:
+   - Claude Code: `/skill-name`
+   - pi.dev: `/skill:skill-name`
+   - oh-my-pi: `/skill:skill-name`
+7. Confirm the description contains language users naturally use.
+8. Check for duplicate names and trigger collisions.
+9. Test in a fresh session in case discovery is cached.
+10. Narrow or strengthen the description before adding host-specific hooks.
 
-When a skill triggers too often, narrow the description or make it manual. Do not weaken a precise description merely to reduce activation frequency.
+If a skill must be manual-only, use the target host's supported invocation-control mechanism. The portable Agent Skills format does not provide a universal manual-only field.
 
 ## Output requirements
 
 When creating or updating a skill:
 
-- Write the actual `SKILL.md` file when filesystem access is available.
-- Preserve valid existing behavior unless the user asks for a redesign.
+- Write the actual files when filesystem access is available.
+- Preserve valid existing behavior unless redesign was requested.
 - Report the resulting path.
-- Summarize the activation contract in one sentence.
-- List the strongest should-trigger and should-not-trigger tests.
-- Identify any remaining trigger collision or permission risk.
+- Summarize the routing contract in one sentence.
+- Report validation performed and its result.
+- Provide representative should-trigger and should-not-trigger tests.
+- Identify remaining trigger-collision, portability, dependency, or permission risks.
