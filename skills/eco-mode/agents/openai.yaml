@@ -1,0 +1,7 @@
+interface:
+  display_name: "Eco Mode"
+  short_description: "Conserve resources during agent work"
+  default_prompt: "Use $eco-mode to complete this task while minimizing resource-heavy commands."
+
+policy:
+  allow_implicit_invocation: false
