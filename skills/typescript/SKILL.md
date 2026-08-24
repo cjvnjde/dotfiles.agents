@@ -13,6 +13,13 @@ Use the smallest type design that makes valid behavior clear and invalid states 
 - Follow established module, naming, file-layout, runtime, and framework conventions. Do not introduce unrelated style changes.
 - Implement the smallest coherent change, then run already-configured focused formatting, typecheck, lint, and tests when relevant. Do not add or reconfigure tooling merely to validate the change.
 
+## Use function syntax consistently
+
+- Define top-level named functions with function declarations.
+- Define functions nested inside other functions as arrow functions assigned to `const`.
+- Use arrow functions for inline callbacks passed as arguments.
+- Do not use `function` expressions for nested functions or callbacks.
+
 ## Prefer inference
 
 Do not annotate what TypeScript already infers correctly. Usually omit types for initialized variables, obvious return values, contextually typed callbacks, and inferable generic arguments.
@@ -56,7 +63,7 @@ type Result<T> =
   | { status: "success"; data: T }
   | { status: "error"; error: Error };
 
-const unwrap = <T>(result: Result<T>) => {
+function unwrap<T>(result: Result<T>) {
   switch (result.status) {
     case "success": {
       return result.data;
@@ -71,7 +78,7 @@ const unwrap = <T>(result: Result<T>) => {
       return exhaustive;
     }
   }
-};
+}
 ```
 
 ## Use meaningful generics
