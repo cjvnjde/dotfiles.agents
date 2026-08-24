@@ -1,6 +1,6 @@
 ---
 name: codereview
-description: Reviews diffs, pull requests, commits, and pending changes for evidence-backed defects when the user explicitly requests a review, audit, or pre-merge assessment. Do not invoke for architecture feedback without a change, debugging a known failure, implementation or commit requests without review intent, or standalone test design.
+description: Reviews diffs, pull requests, commits, and pending changes for evidence-backed defects when the user explicitly requests a review, audit, or pre-merge assessment. Do not invoke for architecture or style-only feedback, debugging a known failure, implementation or commit requests without review intent, or standalone test design.
 ---
 
 # Code Review
@@ -8,6 +8,7 @@ description: Reviews diffs, pull requests, commits, and pending changes for evid
 ## Routing
 
 - Require explicit review intent. Implementation or commit requests alone do not imply review.
+- Use `code-style` for style- or readability-only review; combine both skills only when the request also seeks defects.
 - Use `testing` for standalone test design; use both skills for a test-focused diff review.
 
 ## Workflow
