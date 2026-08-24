@@ -1,29 +1,30 @@
 ---
 name: testing
-description: Plans, writes, reviews, and diagnoses automated tests that prove observable behavior using project conventions and focused execution. ALWAYS invoke this skill when the user asks to add, change, fix, review, or design tests; add a regression test; choose a test level or mocking boundary; or improve test reliability. Do not author or review tests directly—use this skill first. Do not invoke merely to run an existing test command without test-related changes or analysis.
+description: Design, write, review, and diagnose automated tests that prove observable behavior using project conventions and focused execution. Use for test changes, regression coverage, test-level or mocking decisions, and harness reliability; combine with debugging for non-obvious product failures surfaced by tests. Do not invoke merely to run an existing command.
 ---
 
 # Testing
 
-Create the smallest reliable test that proves the requested behavior.
+Create the smallest reliable test that proves the requested observable contract.
 
-## Workflow
+## Design
 
-1. Inspect nearby tests, test configuration, and existing helpers. Follow the project's framework, naming, layout, assertions, and setup conventions.
-2. Identify the observable contract and plausible failure being defended. For bugs, reproduce the reported failure with a regression test when practical.
-3. Choose the lowest test level that proves the contract. Prefer real collaborators; mock only external, expensive, or nondeterministic boundaries.
-4. Write one behavior per test. Cover meaningful success, boundary, and error cases without chasing arbitrary coverage.
-5. Run the smallest affected test set first using repository-defined commands. Never guess commands; expand checks only when shared code, configuration, or failures justify it.
-6. Report tests changed, behavior covered, commands run, and results.
+1. Inspect nearby tests, configuration, helpers, and repository instructions. Follow the project's framework, naming, layout, assertions, and setup conventions.
+2. State the behavioral claim and the plausible reason the test should fail. For a reported bug, reproduce the contract violation when practical.
+3. Choose the lowest test level that proves the claim. Prefer real in-process collaborators. Fake or mock external, slow, expensive, or nondeterministic boundaries, and avoid mocking away the mechanism under test.
+4. Assert supported-interface outputs, state transitions, persisted effects, or meaningful boundary interactions. Avoid private methods, incidental structure, and internal call order.
+5. Keep each test focused on one behavioral claim or reason to fail. Cover meaningful success, boundary, and error cases; do not chase arbitrary coverage targets.
 
-## Test design
+Keep tests deterministic, isolated, order-independent, and easy to understand. Control time, randomness, networks, processes, and external services at their boundaries. Never use sleeps or retries to conceal nondeterminism.
 
-- Assert outputs, state transitions, persisted effects, or boundary interactions visible through the supported interface. Never assert private methods, internal call order, or incidental structure.
-- Keep tests deterministic, isolated, independent, and simple. Control time, randomness, network, processes, and external services at their boundaries.
-- Reuse project helpers before adding new ones. Use factories or builders only when test data is complex; keep relevant values explicit in each test.
-- Avoid duplicating production logic in assertions or fixtures.
-- Treat unexpected warnings, logs, unhandled rejections, and errors as failures, not noise.
-- Verify expected errors precisely enough to distinguish the intended failure from unrelated failures.
-- Keep fixtures minimal and cleanup reliable. Tests must pass alone and in any suite order.
+Reuse existing helpers before adding abstractions. Keep behavior-relevant fixture values explicit, avoid duplicating production logic in assertions, and clean up acquired resources reliably. Verify expected errors precisely. Investigate unexpected warnings, logs, unhandled rejections, and errors instead of automatically ignoring or suppressing them.
 
-Do not add broad snapshots, excessive mocks, sleeps, retries, or production-only hooks to make tests pass. Fix source behavior when the test exposes a product defect.
+Avoid broad snapshots, excessive mocks, and production-only hooks added solely for tests.
+
+## Execute
+
+- Prefer repository-defined commands. If none exists, derive the narrowest command from configuration, state that inference, and never invent a package script.
+- Run the smallest affected test target first, then expand only when shared code, configuration, or observed failures justify it.
+- Follow active eco-mode guidance: keep execution focused and defer expensive checks unless necessary for reliable completion.
+- If a valid test exposes an out-of-scope product defect, report it instead of silently expanding the task.
+- Report tests changed, behavior covered, commands run, results, and any checks not run.
