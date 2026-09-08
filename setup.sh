@@ -125,11 +125,6 @@ enable() {
   require_npx
   mapfile -t current_skills < <(collect_skills)
 
-  if [ "${#current_skills[@]}" -eq 0 ]; then
-    warn "No skills found in $SKILLS_DIR"
-    return 0
-  fi
-
   if [ -f "$STATE_FILE" ]; then
     mapfile -t previous_skills < <(sed '/^[[:space:]]*$/d' "$STATE_FILE")
   fi
@@ -148,14 +143,21 @@ enable() {
   remove_legacy_links
   remove_skills "${stale_skills[@]}"
 
-  npx --yes skills@latest add "$MODULE_DIR" \
-    --global \
-    --skill '*' \
-    --agent "${TARGET_AGENTS[@]}" \
-    --yes
+  if [ "${#current_skills[@]}" -gt 0 ]; then
+    npx --yes skills@latest add "$SKILLS_DIR" \
+      --global \
+      --skill "${current_skills[@]}" \
+      --agent "${TARGET_AGENTS[@]}" \
+      --yes
+  else
+    warn "No global skills found in $SKILLS_DIR"
+  fi
 
   mkdir -p "$STATE_DIR"
-  printf '%s\n' "${current_skills[@]}" > "$STATE_FILE"
+  printf '%s' "" > "$STATE_FILE"
+  if [ "${#current_skills[@]}" -gt 0 ]; then
+    printf '%s\n' "${current_skills[@]}" > "$STATE_FILE"
+  fi
 }
 
 disable() {
