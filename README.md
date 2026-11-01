@@ -9,9 +9,10 @@ agents/
 ├── AGENTS.md                  # Shared global instructions
 ├── setup.sh
 ├── skills/                    # Installed globally
+│   ├── dotfiles/
 │   ├── eco-mode/
 │   └── skill-authoring/
-└── library/                   # Copy selected packages into projects
+└── library/                   # Install selected packages into projects
     ├── code-style/
     ├── codereview/
     ├── commit/
@@ -24,7 +25,7 @@ agents/
 Each skill directory contains `SKILL.md` and any supporting files. Keep packages directly under `skills/` or `library/`.
 
 - `AGENTS.md`: only project-independent instructions. Do not add a library inventory or instructions to scan the library on every task.
-- `skills/`: deliberately small global set. `eco-mode` is an explicitly enabled, project-neutral resource policy; `skill-authoring` supports creating and maintaining skills. Global availability does not mean automatic activation.
+- `skills/`: deliberately small global set. `dotfiles` routes project skill setup and refresh requests to the library through the `skills` CLI; library packages remain project-local. `eco-mode` is an explicitly enabled, project-neutral resource policy; `skill-authoring` supports creating and maintaining skills. Global availability does not mean automatic activation.
 - `library/`: reusable project-level packages. Add new skills here by default. Setup neither installs nor links this directory into agent discovery paths.
 
 Skills commonly expose names and descriptions before their full bodies are loaded. Keeping the library outside installed skill directories avoids that discovery overhead and irrelevant activation. Do not globally install the entire library or link it wholesale into a project.
@@ -48,7 +49,7 @@ The module uses the latest [`skills`](https://github.com/vercel-labs/skills) CLI
 ```bash
 npx --yes skills@latest add ./agents/skills \
   --global \
-  --skill eco-mode skill-authoring \
+  --skill dotfiles eco-mode skill-authoring \
   --agent pi codex claude-code zed universal \
   --yes
 ```
@@ -71,26 +72,36 @@ Node.js and `npx` are required. Unrelated skill names remain untouched; an exist
 
 ## Adopt skills in a project
 
-Ask the agent to select and copy packages explicitly. For example, replace the source path below with your dotfiles checkout:
+Once global setup has installed the `dotfiles` skill, ask the agent:
 
 ```text
-Take only the skills needed for this project from /path/to/dotfiles/agents/library.
-Read /path/to/dotfiles/agents/README.md for the selection workflow, inspect this
-project, and copy the selected complete packages into its project-local skills
-directory. Explain each selection briefly. Do not install anything globally.
+Set up the skills this project needs from my dotfiles library. Install only the
+relevant skills into this project with npx skills, not globally. Explain the selections.
 ```
+
+The routing skill locates the local checkout from known configuration or the managed global instruction link, with `~/dotfiles/agents/` as a checked fallback. It does not assume its installed copy is inside dotfiles.
 
 Selection workflow:
 
 1. Inspect the project's instructions, stack, tooling, existing skills, and requested work before selecting anything.
 2. List library package names and inspect their frontmatter descriptions first. Read full bodies and supporting files only for plausible candidates; do not load every skill into context.
-3. Select the smallest useful set based on concrete project needs. Broadly applicable does not mean required: do not copy style, testing, review, or commit policies merely because this is a code repository. Selecting none is valid.
+3. Select the smallest useful set based on concrete project needs. Broadly applicable does not mean required: do not install style, testing, review, or commit policies merely because this is a code repository. Selecting none is valid.
 4. Read selected packages in full. Check referenced skills and host-specific requirements; include another package only when the selected workflow actually needs it. Project instructions and existing conventions take precedence over library defaults.
-5. Use the project's established, host-supported skills directory. Examples include `.agents/skills/`, `.claude/skills/`, and `.pi/skills/`; verify support for the target host rather than creating every variant. Inspect existing same-name skills and preserve local customizations; ask before overwriting conflicting content.
-6. Copy each complete selected directory, including assets, references, scripts, and host metadata. Use real copies, not symlinks back to dotfiles. Adapt project-specific guidance only where needed; do not copy the library inventory into project instructions.
-7. Check that copied resources resolve and the target agent discovers the selected skills. Report destination paths, a short reason for each selection, adaptations, and any unverified host behavior.
+5. Determine the intended agent and its supported project-local skills directory. Inspect existing same-name skills and preserve local customizations; ask before overwriting conflicting content. Do not target every agent or silently introduce a second skills layout.
+6. Run the latest `skills` CLI from the target project with the verified local library path, explicit skill names, the intended agent, and `--copy`. Never use `--global`, `--all`, or wildcards for library adoption. Do not manually copy packages or link them back to dotfiles.
+7. Check complete installed packages and referenced resources, then use `skills list` to confirm the intended agent's project-local skills. Report destination paths, generated lockfiles, a short reason for each selection, adaptations, and any unverified live-host activation.
 
-Project copies are owned by the project and may be versioned with it. Library edits and global setup do not update those copies. Refresh them explicitly, comparing changes with local adaptations before replacing anything. Remove project skills when they no longer serve the project.
+For example, run this from a target project after selecting `debugging` and `testing` for Codex, replacing the source path with your checkout:
+
+```bash
+npx --yes skills@latest add /path/to/dotfiles/agents/library \
+  --skill debugging testing \
+  --agent codex \
+  --copy \
+  --yes
+```
+
+Project copies are owned by the project and may be versioned with it. Library edits and global setup do not update those copies. To refresh local-path installs, compare changes with project adaptations and rerun the same `add` command for the selected names; do not rely on remote update tracking. Updating the dotfiles checkout itself is a separate action governed by its repository instructions. Remove project skills when they no longer serve the project.
 
 ## Remove global configuration
 
