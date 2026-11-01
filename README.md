@@ -68,7 +68,7 @@ Setup links `agents/AGENTS.md` to each supported global instruction location:
 
 If a destination already exists, the shared setup helper backs it up before creating the managed link.
 
-Node.js and `npx` are required. Unrelated skill names remain untouched; an existing skill with the same name is managed by the `skills` CLI.
+Node.js and `npx` are required. The setup script supports macOS's bundled Bash 3.2; no Bash upgrade is required. Unrelated skill names remain untouched; an existing skill with the same name is managed by the `skills` CLI.
 
 ## Adopt skills in a project
 

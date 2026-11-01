@@ -123,15 +123,20 @@ enable() {
     link_path "$AGENTS_FILE" "$instruction_file"
   done
   require_npx
-  mapfile -t current_skills < <(collect_skills)
+  while IFS= read -r skill; do
+    current_skills+=("$skill")
+  done < <(collect_skills)
 
   if [ -f "$STATE_FILE" ]; then
-    mapfile -t previous_skills < <(sed '/^[[:space:]]*$/d' "$STATE_FILE")
+    while IFS= read -r skill; do
+      previous_skills+=("$skill")
+    done < <(sed '/^[[:space:]]*$/d' "$STATE_FILE")
   fi
 
-  for skill in "${previous_skills[@]}"; do
+  # Bash 3.2 treats empty arrays as unset under nounset.
+  for skill in ${previous_skills[@]+"${previous_skills[@]}"}; do
     found=0
-    for current_skill in "${current_skills[@]}"; do
+    for current_skill in ${current_skills[@]+"${current_skills[@]}"}; do
       if [ "$skill" = "$current_skill" ]; then
         found=1
         break
@@ -141,7 +146,7 @@ enable() {
   done
 
   remove_legacy_links
-  remove_skills "${stale_skills[@]}"
+  remove_skills ${stale_skills[@]+"${stale_skills[@]}"}
 
   if [ "${#current_skills[@]}" -gt 0 ]; then
     npx --yes skills@latest add "$SKILLS_DIR" \
@@ -162,6 +167,7 @@ enable() {
 
 disable() {
   local instruction_file
+  local skill
   local -a installed_skills=()
 
   for instruction_file in "${GLOBAL_INSTRUCTION_FILES[@]}"; do
@@ -170,8 +176,10 @@ disable() {
   remove_legacy_links
 
   if [ -f "$STATE_FILE" ]; then
-    mapfile -t installed_skills < <(sed '/^[[:space:]]*$/d' "$STATE_FILE")
-    remove_skills "${installed_skills[@]}"
+    while IFS= read -r skill; do
+      installed_skills+=("$skill")
+    done < <(sed '/^[[:space:]]*$/d' "$STATE_FILE")
+    remove_skills ${installed_skills[@]+"${installed_skills[@]}"}
     rm -f "$STATE_FILE"
     rmdir "$STATE_DIR" 2>/dev/null || true
   fi
