@@ -25,18 +25,10 @@ SKILLS_DIR="$MODULE_DIR/skills"
 AGENTS_FILE="$MODULE_DIR/AGENTS.md"
 GLOBAL_INSTRUCTION_FILES=(
   "$HOME/.agents/AGENTS.md"
-  "$HOME/.pi/agent/AGENTS.md"
-  "$HOME/.claude/CLAUDE.md"
-  "$HOME/.config/zed/AGENTS.md"
-  "$HOME/.config/opencode/AGENTS.md"
 )
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
 STATE_FILE="$STATE_DIR/agents-skills"
 TARGET_AGENTS=(
-  pi
-  codex
-  claude-code
-  zed
   universal
 )
 LEGACY_DEST_DIRS=(
@@ -119,9 +111,11 @@ enable() {
   local -a previous_skills=()
   local -a stale_skills=()
 
-  for instruction_file in "${GLOBAL_INSTRUCTION_FILES[@]}"; do
-    link_path "$AGENTS_FILE" "$instruction_file"
-  done
+  if [ -f "$AGENTS_FILE" ]; then
+    for instruction_file in "${GLOBAL_INSTRUCTION_FILES[@]}"; do
+      link_path "$AGENTS_FILE" "$instruction_file"
+    done
+  fi
   require_npx
   while IFS= read -r skill; do
     current_skills+=("$skill")

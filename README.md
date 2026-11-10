@@ -6,7 +6,7 @@ Keep the global agent context small. Store project skills here as an opt-in libr
 
 ```text
 agents/
-├── AGENTS.md                  # Shared global instructions
+├── AGENTS.md                  # Optional shared global instructions
 ├── setup.sh
 ├── skills/                    # Installed globally
 │   ├── dotfiles/
@@ -18,17 +18,43 @@ agents/
     ├── commit/
     ├── debugging/
     ├── licence/
+    ├── nestjs-architecture/
+    ├── nestjs-http-boundaries/
+    ├── nestjs-oop-patterns/
+    ├── nestjs-providers-and-di/
+    ├── nestjs-testing/
     ├── testing/
     └── typescript/
 ```
 
 Each skill directory contains `SKILL.md` and any supporting files. Keep packages directly under `skills/` or `library/`.
 
-- `AGENTS.md`: only project-independent instructions. Do not add a library inventory or instructions to scan the library on every task.
+- `AGENTS.md` (optional): only project-independent instructions. Do not add a library inventory or instructions to scan the library on every task.
 - `skills/`: deliberately small global set. `dotfiles` routes project skill setup and refresh requests to the library through the `skills` CLI; library packages remain project-local. `eco-mode` is an explicitly enabled, project-neutral resource policy; `skill-authoring` supports creating and maintaining skills. Global availability does not mean automatic activation.
 - `library/`: reusable project-level packages. Add new skills here by default. Setup neither installs nor links this directory into agent discovery paths.
 
 Skills commonly expose names and descriptions before their full bodies are loaded. Keeping the library outside installed skill directories avoids that discovery overhead and irrelevant activation. Do not globally install the entire library or link it wholesale into a project.
+
+### NestJS library packages
+
+Choose by the task, not merely because a project uses Nest. These packages are
+independently usable and complement the existing language, style, testing and
+review skills; installing the entire set is not required.
+
+| Package | Use for |
+| --- | --- |
+| [nestjs-architecture](library/nestjs-architecture/SKILL.md) | Feature ownership, service decomposition, cross-feature workflows, transactions, tenant isolation and concurrent/delayed effects |
+| [nestjs-http-boundaries](library/nestjs-http-boundaries/SKILL.md) | Runtime DTO/schema validation, PATCH semantics, resource authorization, safe responses and HTTP pipeline parity |
+| [nestjs-oop-patterns](library/nestjs-oop-patterns/SKILL.md) | Invariants, substantive variation, behavioral substitution and choosing a simpler alternative to a pattern |
+| [nestjs-providers-and-di](library/nestjs-providers-and-di/SKILL.md) | Runtime tokens, module visibility, binding identity, registries, scopes and resource lifecycles |
+| [nestjs-testing](library/nestjs-testing/SKILL.md) | Nest-specific proof boundaries, real HTTP/database/worker evidence and safe stateful fixture isolation |
+
+Detailed persistence, composition, invariant/adapter and harness guidance is loaded
+from each package's references only when relevant. Framework mechanics are separate
+from design defaults: preserve the target project's stack and accepted contracts,
+without importing a fixed ORM, test runner, folder tree, retry policy or coverage
+target. Generic TypeScript styling and broad code review remain in their existing
+skills.
 
 ## Install global configuration
 
@@ -50,23 +76,15 @@ The module uses the latest [`skills`](https://github.com/vercel-labs/skills) CLI
 npx --yes skills@latest add ./agents/skills \
   --global \
   --skill dotfiles eco-mode skill-authoring \
-  --agent pi codex claude-code zed universal \
+  --agent universal \
   --yes
 ```
 
 Setup derives the explicit skill names from immediate packages in `agents/skills/`; it does not use a wildcard or pass the whole module as the source. Adding packages to `library/` does not change global installation.
 
-The CLI installs canonical copies under `~/.agents/skills/` and links them into the global directories for Pi, Codex, Claude Code, Zed, and universal agents. Re-running setup refreshes only global skills. The module records installed names under `$XDG_STATE_HOME/dotfiles/agents-skills` (or `~/.local/state/dotfiles/agents-skills`). Previously recorded skills that are no longer in `skills/`, including those moved into `library/`, are removed from global installation on the next enable. Unrecorded CLI installs are not inferred or removed by name.
+The CLI installs global skills for the universal target under `~/.agents/skills/`. Re-running setup refreshes only global skills. The module records installed names under `$XDG_STATE_HOME/dotfiles/agents-skills` (or `~/.local/state/dotfiles/agents-skills`). Previously recorded skills that are no longer in `skills/`, including those moved into `library/`, are removed from global installation on the next enable. Unrecorded CLI installs are not inferred or removed by name.
 
-Setup links `agents/AGENTS.md` to each supported global instruction location:
-
-- Universal: `~/.agents/AGENTS.md`
-- Pi: `~/.pi/agent/AGENTS.md`
-- Claude Code: `~/.claude/CLAUDE.md`
-- Zed: `~/.config/zed/AGENTS.md`
-- OpenCode: `~/.config/opencode/AGENTS.md`
-
-If a destination already exists, the shared setup helper backs it up before creating the managed link.
+When `agents/AGENTS.md` exists, setup links it to the universal instruction location, `~/.agents/AGENTS.md`. If it is absent, setup skips instruction linking and still installs global skills, leaving existing instruction files untouched. If the destination already exists, the shared setup helper backs it up before creating the managed link.
 
 Node.js and `npx` are required. The setup script supports macOS's bundled Bash 3.2; no Bash upgrade is required. Unrelated skill names remain untouched; an existing skill with the same name is managed by the `skills` CLI.
 
