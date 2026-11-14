@@ -29,6 +29,11 @@ agents/
 
 Each skill directory contains `SKILL.md` and any supporting files. Keep packages directly under `skills/` or `library/`.
 
+Skill-owned instructions, references, templates, data, and helpers must be bundled
+inside each package and referenced relative to its root. Do not depend on files
+elsewhere on the author's system or symlinks escaping the package; verify packages
+work when copied alone. Runtime project inputs and documented tools remain external.
+
 - `AGENTS.md` (optional): only project-independent instructions. Do not add a library inventory or instructions to scan the library on every task.
 - `skills/`: deliberately small global set. `dotfiles` routes project skill setup and refresh requests to the library through the `skills` CLI; library packages remain project-local. `eco-mode` is an explicitly enabled, project-neutral resource policy; `skill-authoring` supports creating and maintaining skills. Global availability does not mean automatic activation.
 - `library/`: reusable project-level packages. Add new skills here by default. Setup neither installs nor links this directory into agent discovery paths.

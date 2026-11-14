@@ -87,8 +87,19 @@ Apply these authoring defaults:
 - Put executable helpers in `scripts/`.
 - Keep each authored package directly below the configured skills root for
   broad host compatibility. Verify the host's actual scan depth and settings.
-- Keep bundled paths relative to the skill root; avoid machine-specific paths
-  and host-specific path variables in the portable core.
+- Skills MUST be self-contained: bundle all skill-owned instructions, references,
+  templates, data, and helpers inside the package, using skill-root-relative paths.
+- NEVER depend on files elsewhere on the author's system: no absolute paths,
+  home-directory shortcuts, environment-expanded resource paths, parent traversal
+  outside the package, or symlinks that resolve outside it. This includes files in
+  dotfiles checkouts, other installed skills, and local agent configuration.
+- Move required supporting content into the package; do not disguise system-local
+  files as declared dependencies. The package must remain usable when copied alone
+  to another machine with its documented tools available.
+- User-selected project files, task inputs, and output destinations are runtime
+  data, not bundled resources; discover or accept their locations at execution
+  time rather than hardcoding the author's paths. Public documentation URLs and
+  explicitly documented tool/runtime dependencies are allowed.
 - Link supporting resources directly from `SKILL.md` and say when to load them.
   Avoid chains where one reference must be read to discover another. Nested
   asset directories are allowed when useful.
@@ -263,12 +274,18 @@ Whether or not a validator passes, verify:
 - Required strings, name/directory matching, and character limits are correct.
 - Optional field types and limits match the standard field contract above.
 - Only standard fields are present unless a host adaptation was requested.
-- Every actual bundled reference resolves, including referenced license files.
+- Every actual bundled reference resolves, including referenced license files;
+  resolve symlinks and confirm each resource remains inside the package root.
 - Every script invocation, prerequisite, and side effect is documented.
 - Changed helpers pass the relevant checks, or execution is explicitly unverified.
 - No placeholders, empty directories, or unused supporting files remain.
 - The body defines validation, stop conditions, and output requirements.
-- The package is self-contained apart from its declared dependencies.
+- Copy only the package to a temporary location outside the checkout and validate
+  its resource paths and relevant helper commands there, without relying on the
+  original checkout, installed sibling skills, or author-local configuration.
+  Inspect instructions and helpers for external local-file dependencies too;
+  resolving Markdown links alone does not prove independence. Treat escapes,
+  missing bundled resources, and hardcoded system-local dependencies as failures.
 
 Fix failures and rerun the affected checks. Do not equate frontmatter validation
 with complete conformance: reference tools may omit checks or lag the spec.
